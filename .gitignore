@@ -1,0 +1,13 @@
+**/*.auth/*
+*.env
+*.pem
+#aws cli install
+aws/
+awscliv2-other.zip
+awscliv2.zip
+#terraform 
+*.tfstate
+*.tfstate.*
+**.terraform
+**.terraform.lock.*
+**.tfvars

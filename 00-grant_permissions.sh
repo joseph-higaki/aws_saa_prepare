@@ -1,0 +1,1 @@
+sudo chmod +x 01-install_cli.sh
