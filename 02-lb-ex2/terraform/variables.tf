@@ -33,3 +33,17 @@ variable "subnet_id_az_e" {
   type        = string
   default     = "subnet-0347f477e44b8c202"
 }
+
+variable "ami" {
+  description = "The ID of the ami"
+  type        = string
+  default     = "ami-0cbbe2c6a1bb2ad63"
+}
+
+variable "instance_type" {
+  description = "instance type to use on ec2 instances"
+  type        = string
+  default     = "t2.micro"
+}
+
+
