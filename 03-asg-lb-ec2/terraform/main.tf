@@ -19,13 +19,12 @@ resource "aws_security_group" "ec2_sg" {
     security_groups = [aws_security_group.alb_sg.id]    
   }
 
-  # nO SSH
-  # ingress {
-  #   from_port   = 22
-  #   to_port     = 22
-  #   protocol    = "tcp"
-  #   cidr_blocks = ["0.0.0.0/0"]
-  # }
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   egress {
     from_port   = 0
@@ -71,6 +70,8 @@ resource "aws_launch_template" "app_lt" {
   }  
 }
 
+
+
 #create ASG
 resource "aws_autoscaling_group" "app_asg" {
   name_prefix = "app-asg"  
@@ -91,6 +92,22 @@ resource "aws_autoscaling_group" "app_asg" {
     preferences {
       min_healthy_percentage = 50
     }
+  }
+}
+
+# Add this new resource for CPU-based scaling
+resource "aws_autoscaling_policy" "cpu_scaling_policy" {
+  name                   = "cpu-target-tracking"
+  policy_type            = "TargetTrackingScaling"
+  autoscaling_group_name = aws_autoscaling_group.app_asg.name
+
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 40.0  # Target 40% CPU utilization   
+    
+    disable_scale_in = false  # Allow both scale-out and scale-in
   }
 }
 
