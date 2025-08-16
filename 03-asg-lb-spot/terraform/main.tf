@@ -7,10 +7,26 @@ terraform {
     }
 }
 
+data "aws_vpc" "default" {
+    default = true
+}
+
+data "aws_subnets" "target_subnets" {
+    filter {
+      name= "availability-zone"
+      values = var.target_azs # only the AZs selected in vars
+    }
+    filter {
+      name = "vpc-id"
+      values = [data.aws_vpc.default.id]
+    }
+}
+
+
 resource "aws_security_group" "ec2_sg" {
   name        = "ec2-instance-alb-sg"
   description = "Allow HTTP and SSH access"
-  vpc_id      = var.vpc_id
+  vpc_id      = data.aws_vpc.default.id
 
   ingress {
     from_port   = 80
@@ -38,7 +54,7 @@ resource "aws_security_group" "ec2_sg" {
 resource "aws_security_group" "alb_sg" {
   name        = "alb-http-sg"
   description = "Allow HTTP traffic to ALB"
-  vpc_id      = var.vpc_id
+  vpc_id      = data.aws_vpc.default.id
 
   ingress {
     from_port   = 80
@@ -71,10 +87,8 @@ resource "aws_launch_template" "app_lt_spot" {
   name_prefix = "app-template-spot"
   image_id = var.ami
   instance_type = var.instance_type
-  iam_instance_profile {
-    name = "DemoRoleEC2"
-  }  
-  key_name      = "ec2 tutorial"
+  
+  #key_name      = "ec2 tutorial"
   user_data     = filebase64("/workspaces/aws_saa_prepare/ec2-hello-world-user-data.sh")
   network_interfaces {    
     security_groups =  [aws_security_group.ec2_sg.id]
@@ -88,8 +102,9 @@ resource "aws_autoscaling_group" "app_asg_spot" {
   name_prefix = "app-asg"  
   desired_capacity     = 1
   max_size             = 5
-  min_size             = 1
-  vpc_zone_identifier  = [var.subnet_id_az_d, var.subnet_id_az_e]
+  min_size             = 1  
+  vpc_zone_identifier  = data.aws_subnets.target_subnets.ids
+    
   health_check_type    = "ELB"
   target_group_arns    = [aws_lb_target_group.http_tg.arn]
     # Important for spot instances
@@ -151,7 +166,7 @@ resource "aws_lb_target_group" "http_tg" {
   name     = "app-http-target-group"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  vpc_id   = data.aws_vpc.default.id
   target_type = "instance"
 
   health_check {
@@ -171,7 +186,7 @@ resource "aws_lb" "http_alb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = [var.subnet_id_az_d, var.subnet_id_az_e] # You might want to add another subnet for high availability
+  subnets            = data.aws_subnets.target_subnets.ids
   enable_deletion_protection = false
 }
 
