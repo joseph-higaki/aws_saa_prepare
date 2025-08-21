@@ -133,7 +133,10 @@ resource "aws_autoscaling_group" "app_asg_spot" {
       on_demand_base_capacity                  = 1 # All spot
       on_demand_percentage_above_base_capacity = 0 # 0% on-demand
       spot_allocation_strategy                 = "capacity-optimized" # Best practice
-      #spot_max_price          = "0.0020" # Set your max bid price (optional)
+      #spot_max_price          = "0.0020" 
+      # when spot_max_price 0.0020 the asg never outscaled
+      # don't know where in the AWS GUI this is though hehe 
+      spot_max_price          = "0.0040" # 0.004 is higher than Aug15 max price ref of 0.003x
     }
   }
 
